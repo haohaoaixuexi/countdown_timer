@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0号记忆 - 流星雨之约</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* 开场动画 */
+        #intro {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #0a1551 0%, #1a237e 50%, #000051 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 3s;
+        }
+        
+        #intro h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeIn 2s forwards;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        }
+        
+        .date-text {
+            font-size: 1.5rem;
+            opacity: 0;
+            animation: fadeIn 2s 1s forwards;
+            margin: 0.5rem;
+        }
+        
+        /* 开场流星雨 */
+        .intro-meteor {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #fff;
+            border-radius: 50%;
+            opacity: 0;
+        }
+        
+        @keyframes introMeteor {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--dx), var(--dy)) scale(0);
+            }
+        }
+        
+        /* 主场景 */
+        #main-scene {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            display: none;
+            opacity: 0;
+            transition: opacity 2s;
+        }
+        
+        #main-scene.active {
+            display: block;
+            opacity: 1;
+        }
+        
+        /* 星空背景 */
+        #starfield {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 千纸鹤容器 */
+        .cranes-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            perspective: 1000px;
+        }
+        
+        /* 千纸鹤样式 */
+        .paper-crane {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+        }
+        
+        .paper-crane svg {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s;
+        }
+        
+        .paper-crane:hover svg {
+            transform: scale(1.2) rotateY(360deg);
+        }
+        
+        .paper-crane.floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(5deg); }
+            66% { transform: translateY(10px) rotate(-5deg); }
+        }
+        
+        /* 记忆弹窗 */
+        .memory-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .memory-modal.active {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .memory-title {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: #fff;
+        }
+        
+        .memory-content {
+            font-size: 1.1rem;
+            line-height: 2;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 2rem;
+        }
+        
+        .memory-interactive {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        /* 不同的互动组件 */
+        .slider-container {
+            margin: 2rem 0;
+        }
+        
+        .time-slider {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .slider-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b 0%, #4ecdc4 100%);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .choice-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        
+        .choice-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        
+        .choice-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .choice-btn.selected {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+        }
+        
+        /* 绘制区域 */
+        .draw-canvas {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            cursor: crosshair;
+            display: block;
+            margin: 1rem auto;
+        }
+        
+        /* 音乐可视化 */
+        .music-viz {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            height: 100px;
+            gap: 3px;
+            margin: 2rem 0;
+        }
+        
+        .music-bar {
+            width: 4px;
+            background: linear-gradient(180deg, #4ecdc4 0%, #44a8b3 100%);
+            border-radius: 2px;
+            animation: musicPulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes musicPulse {
+            0%, 100% { height: 20px; }
+            50% { height: var(--height); }
+        }
+        
+        /* 关闭按钮 */
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 1.5rem;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+        
+        /* 最终展示 */
+        #final-message {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 2s;
+        }
+        
+        #final-message.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .constellation {
+            position: relative;
+            width: 600px;
+            height: 400px;
+            margin-bottom: 3rem;
+        }
+        
+        .star-point {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+        
+        .star-line {
+            position: absolute;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.3);
+            transform-origin: left center;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        /* 提示文字 */
+        .hint-text {
+            position: fixed;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1rem;
+            opacity: 0.6;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        /* 进度指示器 */
+        .progress-indicator {
+            position: fixed;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+        
+        .progress-dot {
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .progress-dot.completed {
+            background: #4ecdc4;
+            box-shadow: 0 0 10px #4ecdc4;
+        }
+    </style>
+</head>
+<body>
+    <!-- 开场序幕 -->
+    <div id="intro">
+        <h1>0号记忆</h1>
+        <p class="date-text">2001.11.19 狮子座流星雨</p>
+        <p class="date-text" style="animation-delay: 2s;">2034.11.19 三十三年之约</p>
+        <p class="date-text" style="animation-delay: 3s; font-size: 1rem; opacity: 0.7;">献给Q，献给我们的青春</p>
+    </div>
+    
+    <!-- 主场景 -->
+    <div id="main-scene">
+        <canvas id="starfield"></canvas>
+        <div class="cranes-container" id="cranesContainer"></div>
+        <div class="hint-text">点击千纸鹤，打开记忆的盒子...</div>
+        <div class="progress-indicator" id="progressIndicator"></div>
+    </div>
+    
+    <!-- 记忆模态框（动态创建） -->
+    
+    <!-- 最终画面 -->
+    <div id="final-message">
+        <div class="constellation" id="constellation"></div>
+        <h2 style="font-weight: 300; font-size: 2rem; margin-bottom: 1rem;">我们的星座</h2>
+        <p style="opacity: 0.8; line-height: 2; text-align: center; max-width: 600px;">
+            每一颗星都是一个记忆<br>
+            连成了只属于我们的图案<br>
+            <br>
+            33年很长，长到足够忘记一个人<br>
+            33年很短，短到一个眼神就能想起所有<br>
+            <br>
+            Q，如果你看到这里<br>
+            请记得，你的爱情<br>
+            是我生活中的灿烂之光
+        </p>
+    </div>
+    
+    <script>
+        // 记忆数据
+        const memories = [
+            {
+                id: 'meteor',
+                title: '植物园的流星雨',
+                color: '#ff6b6b',
+                content: `那晚的植物园，没有任何灯光<br>
+                        你穿着蓝色粗棒针毛衣，很温暖<br>
+                        天空中划过一颗绿色的流星<br>
+                        然后是五颜六色的流星雨<br><br>
+                        你说："33年后，我们再来这里看流星雨吧"`,
+                interactive: {
+                    type: 'meteor-shower',
+                    prompt: '点击夜空，重现那晚的流星...'
+                }
+            },
+            {
+                id: 'skating',
+                title: '地坛的第一次约会',
+                color: '#4ecdc4',
+                content: `防空洞改造的速滑冰场<br>
+                        你拉着我的手说："带你体验下飞的感觉"<br>
+                        脱缰的身体不再属于我<br>
+                        风吹在脸上，一片纯白，步入云端<br><br>
+                        从那一刻起，我上了你的云霄飞车`,
+                interactive: {
+                    type: 'slider',
+                    prompt: '滑动感受我们同步的速度...',
+                    min: 0,
+                    max: 100
+                }
+            },
+            {
+                id: 'kiss',
+                title: 'KFC味道的初吻',
+                color: '#ffe66d',
+                content: `大运村的宿舍，KFC全家桶<br>
+                        上铺还有个不认识的人在睡觉<br>
+                        没有星空圆月，没有浪漫场景<br><br>
+                        但我们吻了5个小时<br>
+                        上铺的人说："你俩想不想玩扑克？"`,
+                interactive: {
+                    type: 'choice',
+                    prompt: '如果重来，你希望初吻在哪里？',
+                    choices: ['还是KFC旁', '植物园草地', '昆明湖畔', '哪里都好']
+                }
+            },
+            {
+                id: 'letter',
+                title: '千纸鹤里的千言万语',
+                color: '#a8e6cf',
+                content: `一千只千纸鹤，五彩缤纷<br>
+                        我以为只是手工礼物<br>
+                        分手后才发现每只纸鹤里都有你的字<br><br>
+                        "千"纸鹤，"千"言万语<br>
+                        Q就是"千"，是你的名字`,
+                interactive: {
+                    type: 'write',
+                    prompt: '写下一句想对Q说的话...'
+                }
+            },
+            {
+                id: 'world-end',
+                title: '世界尽头的誓言',
+                color: '#ff8b94',
+                content: `灵山的高山草甸<br>
+                        草坡边缘是崖壁，像在世界尽头<br>
+                        你把外套披在我身上<br><br>
+                        "我们一起考哈佛吧"<br>
+                        在世界尽头，我们立下宏伟目标`,
+                interactive: {
+                    type: 'draw',
+                    prompt: '画出我们的未来...'
+                }
+            },
+            {
+                id: 'song',
+                title: '黑豹和崔健的夜晚',
+                color: '#c7ceea',
+                content: `深夜的北京，车里震耳欲聋的音乐<br>
+                        你总唱《无地自容》和《一无所有》<br>
+                        唱得那么难听还那么投入<br><br>
+                        我爱的不是歌声<br>
+                        是你认真的样子`,
+                interactive: {
+                    type: 'music',
+                    prompt: '播放我们的歌...'
+                }
+            },
+            {
+                id: 'watch',
+                title: '红色串珠的Swatch',
+                color: '#ff6b6b',
+                content: `表带是红色串珠，像流星的尾巴<br>
+                        为了保持崭新，我不敢戴<br>
+                        分手时棉线腐朽了<br>
+                        红色串珠散落一地<br><br>
+                        有些东西，越想保护越容易失去`,
+                interactive: {
+                    type: 'choice',
+                    prompt: '如果时间能倒流...',
+                    choices: ['每天都戴着', '还是珍藏着', '送给时间', '让它陪我们老去']
+                }
+            },
+            {
+                id: 'promise',
+                title: '海枯石烂的承诺',
+                color: '#4ecdc4',
+                content: `大连的海边，你让我听海浪声<br>
+                        "想我的时候听听海浪的声音"<br>
+                        "我会爱你到海枯石烂"<br><br>
+                        那时我们以为永远很容易<br>
+                        却不知道永远有多远`,
+                interactive: {
+                    type: 'meteor-shower',
+                    prompt: '点击听海浪声...'
+                }
+            }
+        ];
+        
+        let completedMemories = new Set();
+        let currentModal = null;
+        
+        // 初始化
+        window.addEventListener('load', () => {
+            // 开场流星雨
+            createIntroMeteors();
+            
+            setTimeout(() => {
+                document.getElementById('intro').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('intro').style.display = 'none';
+                    document.getElementById('main-scene').classList.add('active');
+                    initializeScene();
+                }, 3000);
+            }, 5000);
+        });
+        
+        // 开场流星雨效果
+        function createIntroMeteors() {
+            const intro = document.getElementById('intro');
+            const colors = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#a8e6cf', '#ff8b94', '#c7ceea'];
+            
+            setInterval(() => {
+                const meteor = document.createElement('div');
+                meteor.className = 'intro-meteor';
+                meteor.style.left = Math.random() * window.innerWidth + 'px';
+                meteor.style.top = Math.random() * window.innerHeight * 0.5 + 'px';
+                
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                meteor.style.background = color;
+                meteor.style.boxShadow = `0 0 10px ${color}, 0 0 20px ${color}`;
+                
+                const angle = Math.random() * Math.PI / 3 + Math.PI / 6;
+                const distance = 300 + Math.random() * 400;
+                meteor.style.setProperty('--dx', Math.cos(angle) * distance + 'px');
+                meteor.style.setProperty('--dy', Math.sin(angle) * distance + 'px');
+                
+                meteor.style.animation = `introMeteor ${1 + Math.random()}s linear forwards`;
+                
+                intro.appendChild(meteor);
+                
+                meteor.addEventListener('animationend', () => meteor.remove());
+            }, 200);
+        }
+        
+        // 初始化主场景
+        function initializeScene() {
+            createStarfield();
+            createPaperCranes();
+            createProgressIndicator();
+        }
+        
+        // 创建星空背景
+        function createStarfield() {
+            const canvas = document.getElementById('starfield');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const stars = [];
+            for (let i = 0; i < 300; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2,
+                    brightness: Math.random(),
+                    twinkleSpeed: 0.01 + Math.random() * 0.02
+                });
+            }
+            
+            function animate() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                stars.forEach(star => {
+                    star.brightness += Math.sin(Date.now() * star.twinkleSpeed) * 0.02;
+                    star.brightness = Math.max(0.3, Math.min(1, star.brightness));
+                    
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
+                    ctx.fill();
+                });
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        // 创建千纸鹤
+        function createPaperCranes() {
+            const container = document.getElementById('cranesContainer');
+            
+            memories.forEach((memory, index) => {
+                const crane = document.createElement('div');
+                crane.className = 'paper-crane floating';
+                crane.dataset.memoryId = memory.id;
+                crane.style.animationDelay = `${index * 0.5}s`;
+                
+                // 使用SVG创建千纸鹤形状
+                crane.innerHTML = `
+                    <svg viewBox="0 0 100 100" fill="${memory.color}">
+                        <path d="M50 10 L30 40 L20 45 L15 55 L25 60 L35 55 L50 70 L65 55 L75 60 L85 55 L80 45 L70 40 Z" 
+                              stroke="rgba(255,255,255,0.3)" 
+                              stroke-width="1"/>
+                        <path d="M50 70 L40 85 L50 95 L60 85 Z" 
+                              fill="${memory.color}"
+                              opacity="0.8"/>
+                    </svg>
+                `;
+                
+                // 随机位置（围绕中心分布）
+                const angle = (index / memories.length) * Math.PI * 2;
+                const radius = 200 + Math.random() * 100;
+                const x = window.innerWidth / 2 + Math.cos(angle) * radius - 40;
+                const y = window.innerHeight / 2 + Math.sin(angle) * radius - 40;
+                
+                crane.style.left = x + 'px';
+                crane.style.top = y + 'px';
+                
+                crane.addEventListener('click', () => openMemory(memory));
+                container.appendChild(crane);
+            });
+        }
+        
+        // 创建进度指示器
+        function createProgressIndicator() {
+            const indicator = document.getElementById('progressIndicator');
+            memories.forEach((memory) => {
+                const dot = document.createElement('div');
+                dot.className = 'progress-dot';
+                dot.dataset.memoryId = memory.id;
+                indicator.appendChild(dot);
+            });
+        }
+        
+        // 打开记忆
+        function openMemory(memory) {
+            if (currentModal) return;
+            
+            const modal = document.createElement('div');
+            modal.className = 'memory-modal';
+            modal.innerHTML = `
+                <button class="close-btn" onclick="closeMemory('${memory.id}')">×</button>
+                <h2 class="memory-title">${memory.title}</h2>
+                <div class="memory-content">${memory.content}</div>
+                <div class="memory-interactive" id="interactive-${memory.id}"></div>
+            `;
+            
+            document.body.appendChild(modal);
+            currentModal = modal;
+            
+            setTimeout(() => {
+                modal.classList.add('active');
+                createInteractive(memory);
+            }, 100);
+        }
+        
+        // 创建互动元素
+        function createInteractive(memory) {
+            const container = document.getElementById(`interactive-${memory.id}`);
+            
+            switch (memory.interactive.type) {
+                case 'meteor-shower':
+                    container.innerHTML = `
+                        <p>${memory.interactive.prompt}</p>
+                        <div style="width: 100%; height: 200px; background: #0a1551; border-radius: 10px; position: relative; overflow: hidden; cursor: pointer;" id="meteor-canvas-${memory.id}"></div>
+                    `;
+                    
+                    const meteorCanvas = document.getElementById(`meteor-canvas-${memory.id}`);
+                    meteorCanvas.addEventListener('click', (e) => {
+                        createMemoryMeteor(e, meteorCanvas);
+                    });
+                    break;
+                    
+                case 'slider':
+                    container.innerHTML = `
+                        <p>${memory.interactive.prompt}</p>
+                        <div class="slider-container">
+                            <div class="time-slider" id="slider-${memory.id}">
+                                <div class="slider-fill" id="fill-${memory.id}"></div>
+                            </div>
+                            <p style="margin-top: 1rem; opacity: 0.7;">我们的同步率：<span id="sync-${memory.id}">0</span>%</p>
+                        </div>
+                    `;
+                    
+                    const slider = document.getElementById(`slider-${memory.id}`);
+                    const fill = document.getElementById(`fill-${memory.id}`);
+                    const sync = document.getElementById(`sync-${memory.id}`);
+                    
+                    slider.addEventListener('click', (e) => {
+                        const rect = slider.getBoundingClientRect();
+                        const percent = ((e.clientX - rect.left) / rect.width) * 100;
+                        fill.style.width = percent + '%';
+                        sync.textContent = Math.round(percent);
+                        
+                        if (percent > 90) {
+                            setTimeout(() => {
+                                markAsCompleted(memory.id);
+                            }, 500);
+                        }
+                    });
+                    break;
+                    
+                case 'choice':
+                    container.innerHTML = `
+                        <p>${memory.interactive.prompt}</p>
+                        <div class="choice-buttons">
+                            ${memory.interactive.choices.map(choice => 
+                                `<button class="choice-btn" onclick="selectChoice('${memory.id}', '${choice}')">${choice}</button>`
+                            ).join('')}
+                        </div>
+                    `;
+                    break;
+                    
+                case 'write':
+                    container.innerHTML = `
+                        <p>${memory.interactive.prompt}</p>
+                        <textarea style="width: 100%; height: 100px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 1rem; border-radius: 10px; font-family: inherit;" 
+                                  placeholder="写下你的话..." id="write-${memory.id}"></textarea>
+                        <button class="choice-btn" style="margin-top: 1rem;" onclick="saveWriting('${memory.id}')">封存</button>
+                    `;
+                    break;
+                    
+                case 'draw':
+                    container.innerHTML = `
+                        <p>${memory.interactive.prompt}</p>
+                        <canvas class="draw-canvas" id="canvas-${memory.id}" width="400" height="200"></canvas>
+                        <button class="choice-btn" style="margin-top: 1rem;" onclick="clearCanvas('${memory.id}')">重画</button>
+                    `;
+                    
+                    const canvas = document.getElementById(`canvas-${memory.id}`);
+                    const ctx = canvas.getContext('2d');
+                    let isDrawing = false;
+                    
+                    canvas.addEventListener('mousedown', () => isDrawing = true);
+                    canvas.addEventListener('mouseup', () => {
+                        isDrawing = false;
+                        markAsCompleted(memory.id);
+                    });
+                    
+                    canvas.addEventListener('mousemove', (e) => {
+                        if (!isDrawing) return
